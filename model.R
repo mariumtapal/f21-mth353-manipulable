@@ -29,19 +29,31 @@
 library(combinat)
 library(tidyverse)
 
-# species <- c(
-#   "ATGCTTAGC",
-#   "GTACCCAAT",
-#   "GTACGTAAT",
-#   "GTACGTAATA"
-# )
-# 
-# stresses <- c(
-#   "heat",
-#   "light",
-#   "light",
-#   "food"
-# )
+species <- c(
+  "ATGCTTAGC",
+  "GTACCCAAT",
+  "GTACGTAAT",
+  "GTATAATA",
+  "GTACC",
+  "TACGGTA",
+  "GATCC",
+  "ATCG",
+  "ATTTGCA",
+  "ATCG"
+)
+
+stresses <- c(
+  "heat",
+  "light",
+  "light",
+  "food",
+  "heat",
+  "light",
+  "food",
+  NA,
+  "light",
+  "heat"
+)
 
 find_matches <- function(specie, stress = NA) {
   
@@ -74,22 +86,22 @@ find_matches <- function(specie, stress = NA) {
     new <- sample(permn(old_split), 1) %>%
       unlist() %>%
       paste(collapse = "")
+    # split into nucleotides  
+    new_split <- strsplit(new, "")[[1]]
+    # find the position of the matches
+    i <- which(old_split == new_split)
+    if (length(i) == 0L) {i <- NA }
   }
   
   # if na, no change
-  if (is.na(stress)) {new <- specie}
-  
+  if (is.na(stress)) {
+    new <- specie
+    i <- NA
+    }
 
-  # split into nucleotides  
-  new_split <- strsplit(new, "")[[1]]
-  
-  
-  # find the position of the matches
-  i <- which(old_split == new_split)
-  if (length(i) == 0L) {i <- NA }
   
   # form output df
-  out <- data.frame(specie, new, i)
+  out <- data.frame(specie, new, stress, i)
   
   return(out)
 }
@@ -106,25 +118,64 @@ find_matches <- function(specie, stress = NA) {
 # max length is 10
 
 # stress = "light"
-# df <- map2_dfr(species, stress, find_matches)
+df <- map2_dfr(species, stresses, find_matches)
 # # 
 # # 
-# summary <- df %>% group_by(specie, stress) %>%
-#   summarise(count_changes = n()) %>%
-#   mutate(total_nucleotides = nchar(specie),
-#          prob_changes = count_changes/total_nucleotides) %>%
-#   arrange(desc(prob_changes)) 
+summary <- df %>% group_by(specie, stress) %>%
+  summarise(count_changes = n()) %>%
+  mutate(total_nucleotides = nchar(specie),
+         prob_changes = count_changes/total_nucleotides) %>%
+  arrange(desc(prob_changes))
 #   
   #df %>% pivot_wider(values_from = i, names_repair = "unique")
-# 
-# # bargraph
-# ggplot(summary, aes(x=prob_changes)) + 
-#   geom_boxplot()
-# 
-# # box plot
-# ggplot(summary, aes(x=specie, y=prob_changes)) + 
-#   geom_col() + coord_flip()
-# 
+
+# bargraph
+ggplot(summary, aes(x=prob_changes)) +
+  geom_boxplot()
+
+# box plot
+ggplot(summary, aes(x=specie, y=prob_changes)) +
+  geom_col() + coord_flip()
+
+
+
+
+# try same specie with different stresses
+df <- map2_dfr("GTACGTAATA", c("food", "heat", "light"), find_matches)
+summary <- df %>% group_by(specie, stress) %>%
+  summarise(count_changes = n()) %>%
+  mutate(total_nucleotides = nchar(specie),
+         prob_changes = count_changes/total_nucleotides) %>%
+  arrange(desc(prob_changes))
+
+ggplot(summary, aes(x=prob_changes)) +
+  geom_boxplot()
+#find_matches("GTACGTAATA", c("food", "heat", "light"))
+
+# test all with all stresses
+
+df2 <- map2_dfr(species, c("food", "heat", "light"), find_matches)
+total_df <- tibble(specie = character(),
+                   new = character(), 
+                   stress = character(),
+                   i = integer()
+                   )
+
+for (specie in species) {
+  total_df <- map2_dfr(specie, c("food", "heat", "light"), find_matches) %>% bind_rows(total_df)
+}
+summary <- total_df %>% group_by(specie, stress) %>%
+  summarise(count_changes = n()) %>%
+  mutate(total_nucleotides = nchar(specie),
+         prob_changes = count_changes/total_nucleotides) %>%
+  arrange(desc(prob_changes))
+
+ggplot(summary, aes(x=prob_changes)) +
+  geom_boxplot() + facet_wrap(~stress)
+
+ggplot(summary, aes(x=specie, y=prob_changes, fill = stress)) +
+  geom_col(position = "dodge") + coord_flip()
+
 # 
 # # maybe print both out and visualize it?
 # 
