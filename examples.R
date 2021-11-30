@@ -2,8 +2,10 @@
 library(combinat)
 library(tidyverse)
 
+
 # source function from other script
 source("model.R")
+
 
 # vector of DNA species of different lengths
 species <- c(
@@ -34,14 +36,17 @@ stresses <- c(
 )
 
 # merge vectors in a dataset
-data <- tibble(specie = species,
-               stress = stresses)
+data <- tibble(
+  specie = species,
+  stress = stresses
+)
+
 
 # example 1: apply function to each row of data
-df <- map2_dfr(data$specie, data$stress, find_matches)
+df1 <- map2_dfr(data$specie, data$stress, find_matches)
 
 # summary table
-summary <- df %>%
+summary1 <- df1 %>%
   group_by(specie, stress) %>%
   summarise(count_changes = n()) %>%
   mutate(
@@ -51,14 +56,13 @@ summary <- df %>%
   arrange(desc(prob_changes))
 
 # boxplot
-ggplot(summary, aes(x = prob_changes)) +
-  geom_boxplot()
-
-# scatterplot
-ggplot(summary, aes(x = total_nucleotides, y = prob_changes, 
-                    colour = stress, size = total_nucleotides)) +
-  geom_point()
-
+ggplot(summary1, aes(x = prob_changes)) +
+  geom_boxplot() +
+  facet_wrap(~stress) +
+  labs(
+    x = "Probability of Nuceleotide Change",
+    title = "Distribution of Nucleotide Changes by Stress"
+  )
 
 
 # try one specie with different stresses
@@ -80,7 +84,6 @@ ggplot(summary2, aes(x = stress, y = prob_changes, fill = stress)) +
 
 
 # test all species in vector with all stresses
-
 # initiate empty tibble
 df3 <- tibble(
   specie = character(),
@@ -90,7 +93,8 @@ df3 <- tibble(
 )
 
 for (specie in species) {
-  df3 <- map2_dfr(specie, c("food", "heat", "light"), find_matches) %>% bind_rows(df3)
+  df3 <- map2_dfr(specie, c("food", "heat", "light"), find_matches) %>%
+    bind_rows(df3)
 }
 
 summary3 <- df3 %>%
@@ -111,10 +115,10 @@ ggplot(summary3, aes(x = specie, y = prob_changes, fill = stress)) +
   coord_flip()
 
 # avg percentage change by stress ~ about the same!
-summary3 %>% 
-  select(stress, prob_changes) %>% 
-  group_by(stress) %>% 
+summary3 %>%
+  select(stress, prob_changes) %>%
+  group_by(stress) %>%
   summarise(mean = mean(prob_changes))
 
-# in the real world this number would be different because we would use real DNA and mutated DNA
-# but this is a way to visualize the changes by stress
+# in the real world this number would be different because we would use real DNA
+# and mutated DNA but this is a way to visualize the changes by stress

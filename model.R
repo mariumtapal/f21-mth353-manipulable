@@ -1,22 +1,3 @@
-# stresses (what does each do?): heat, light, food given, -- maybe a slider of how much of each is given?
-# create a string DNA of the anemones -- we have six of them? or sth
-# right before death - change
-# some string didn't change -- resistant?
-# string length?
-# new string after stress
-# what's the difference between the strings, how would you go back?
-# how many different ways can it be changed?
-# permutations of the string?
-# how many of certain substrings are in the string
-# probability
-# maybe visualize it?
-# shiny app?
-# with buttons for selecting species,
-# combinat::permn
-
-library(combinat)
-library(tidyverse)
-
 find_matches <- function(specie, stress = NA) {
 
   # for ()
