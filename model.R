@@ -25,21 +25,21 @@ find_matches <- function(specie, stress = NA) {
     # split into nucleotides
     new_split <- strsplit(new, "")[[1]]
     # find the position of the matches
-    i <- which(old_split == new_split)
-    if (length(i) == 0L) {
-      i <- NA
+    position <- which(old_split == new_split)
+    if (length(position) == 0L) {
+      position <- NA
     }
   }
 
   # if na, no change
   if (is.na(stress)) {
     new <- specie
-    i <- NA
+    position <- NA
   }
 
 
   # form output df
-  out <- data.frame(specie, new, stress, i)
+  out <- data.frame(specie, new, stress, position)
 
   return(out)
 }

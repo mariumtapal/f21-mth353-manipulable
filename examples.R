@@ -96,7 +96,7 @@ df3 <- tibble(
   specie = character(),
   new = character(),
   stress = character(),
-  i = integer()
+  position = integer()
 )
 
 for (specie in species) {
