@@ -7,6 +7,14 @@ library(tidyverse)
 source("model.R")
 
 
+#------------------
+# base example from section 2.3: The function, what it does and how to run it
+find_matches(specie = "ATCGGTAT", stress = "heat")
+
+
+#------------------
+# example 1 from section 3.1: Specific DNAs with specific stresses
+
 # vector of DNA species of different lengths
 species <- c(
   "ATGCTTAGC",
@@ -35,17 +43,11 @@ stresses <- c(
   "heat"
 )
 
-# merge vectors in a dataset
-data <- tibble(
-  specie = species,
-  stress = stresses
-)
-
-
 # example 1: apply function to each row of data
-df1 <- map2_dfr(specie = species, stress = stresses, find_matches)
+df1 <- map2_dfr(species, stresses, find_matches)
+df1
 
-# summary table
+# summary table (for internal calculations)
 summary1 <- df1 %>%
   group_by(specie, stress) %>%
   filter(!is.na(stress)) %>% 
@@ -56,18 +58,37 @@ summary1 <- df1 %>%
   ) %>%
   arrange(desc(prob_changes))
 
-# boxplot
+# boxplot1
 ggplot(summary1, aes(x = prob_changes)) +
   geom_boxplot() +
   facet_wrap(~stress) +
   labs(
-    x = "Probability of Nucleotide Change",
-    title = "Distribution of Nucleotide Changes by Stress"
-  )
+    x = "Proportion of the DNA string that mutates",
+    title = "What proportion of the DNA string mutates by stresss?",
+  ) +
+  theme(axis.text.y = element_blank(),
+        axis.ticks.y = element_blank())
 
 
-# try one specie with different stresses
-df2 <- map2_dfr("GTACGTAATA", c("food", "heat", "light"), find_matches)
+#------------------
+# example 2 from section 3.2: Many DNAs with all 3 stresses
+
+# test all species in vector with all stresses
+# initiate empty tibble
+df2 <- tibble(
+  specie = character(),
+  new = character(),
+  stress = character(),
+  position = integer()
+)
+
+# loop and map find_matches()
+for (specie in species) {
+  df2 <- map2_dfr(specie, c("food", "heat", "light"), find_matches) %>%
+    bind_rows(df2)
+}
+
+# summary table (for internal calculations)
 summary2 <- df2 %>%
   group_by(specie, stress) %>%
   summarise(count_changes = n()) %>%
@@ -77,61 +98,19 @@ summary2 <- df2 %>%
   ) %>%
   arrange(desc(prob_changes))
 
+# boxplot2
 ggplot(summary2, aes(x = prob_changes)) +
-  geom_boxplot()
-
-ggplot(summary2, aes(x = stress, y = prob_changes, fill = stress)) +
-  geom_col() +
-  labs(
-    x = "Stress",
-    fill = "Stress",
-    y = "Probability of Nucleotide Change",
-    title = "Distribution of Nucleotide Changes by Stress"
-  )
-
-
-# test all species in vector with all stresses
-# initiate empty tibble
-df3 <- tibble(
-  specie = character(),
-  new = character(),
-  stress = character(),
-  position = integer()
-)
-
-for (specie in species) {
-  df3 <- map2_dfr(specie, c("food", "heat", "light"), find_matches) %>%
-    bind_rows(df3)
-}
-
-summary3 <- df3 %>%
-  group_by(specie, stress) %>%
-  summarise(count_changes = n()) %>%
-  mutate(
-    total_nucleotides = nchar(specie),
-    prob_changes = (total_nucleotides - count_changes) / total_nucleotides
-  ) %>%
-  arrange(desc(prob_changes))
-
-ggplot(summary3, aes(x = prob_changes)) +
   geom_boxplot() +
   facet_wrap(~stress) +
   labs(
-    x = "Probability of Nucleotide Change",
-    title = "Distribution of Nucleotide Changes by Stress"
-  )
+    x = "Proportion of the DNA string that mutates",
+    title = "What proportion of the DNA string mutates by stresss?",
+  ) +
+  theme(axis.text.y = element_blank(),
+        axis.ticks.y = element_blank())
 
-ggplot(summary3, aes(x = specie, y = prob_changes, fill = stress)) +
-  geom_col(position = "dodge") +
-  coord_flip() + labs(
-    x = "DNA Specie",
-    fill = "Stress",
-    y = "Probability of Nucleotide Change",
-    title = "Distribution of Nucleotide Changes by Specie and Stress"
-  )
-
-# avg percentage change by stress ~ about the same!
-summary3 %>%
+# summary table - avg percentage change by stress ~ about the same!
+summary2 %>%
   select(stress, prob_changes) %>%
   group_by(stress) %>%
   summarise(mean = mean(prob_changes))
